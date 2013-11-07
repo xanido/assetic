@@ -11,7 +11,9 @@
 
 namespace Assetic\Asset;
 
+use Assetic\AssetManager;
 use Assetic\Cache\CacheInterface;
+use Assetic\Factory\LazyAssetManager;
 use Assetic\Filter\FilterInterface;
 use Assetic\Filter\HashableInterface;
 
@@ -24,11 +26,13 @@ class AssetCache implements AssetInterface
 {
     private $asset;
     private $cache;
+    private $am;
 
-    public function __construct(AssetInterface $asset, CacheInterface $cache)
+    public function __construct(AssetInterface $asset, CacheInterface $cache, AssetManager $am = null)
     {
         $this->asset = $asset;
         $this->cache = $cache;
+        $this->am = $am;
     }
 
     public function ensureFilter(FilterInterface $filter)
@@ -48,7 +52,7 @@ class AssetCache implements AssetInterface
 
     public function load(FilterInterface $additionalFilter = null)
     {
-        $cacheKey = self::getCacheKey($this->asset, $additionalFilter, 'load');
+        $cacheKey = self::getCacheKey($this->asset, $additionalFilter, $this->am, 'load');
         if ($this->cache->has($cacheKey)) {
             $this->asset->setContent($this->cache->get($cacheKey));
 
@@ -61,7 +65,7 @@ class AssetCache implements AssetInterface
 
     public function dump(FilterInterface $additionalFilter = null)
     {
-        $cacheKey = self::getCacheKey($this->asset, $additionalFilter, 'dump');
+        $cacheKey = self::getCacheKey($this->asset, $additionalFilter, $this->am, 'dump');
         if ($this->cache->has($cacheKey)) {
             return $this->cache->get($cacheKey);
         }
@@ -109,6 +113,10 @@ class AssetCache implements AssetInterface
 
     public function getLastModified()
     {
+        if($this->am !== null) {
+            return $this->am->getLastModified($this->asset);
+        }
+
         return $this->asset->getLastModified();
     }
 
@@ -144,7 +152,7 @@ class AssetCache implements AssetInterface
      *
      * @return string A key for identifying the current asset
      */
-    private static function getCacheKey(AssetInterface $asset, FilterInterface $additionalFilter = null, $salt = '')
+    private static function getCacheKey(AssetInterface $asset, FilterInterface $additionalFilter = null, $am = null, $salt = '')
     {
         if ($additionalFilter) {
             $asset = clone $asset;
@@ -154,7 +162,11 @@ class AssetCache implements AssetInterface
         $cacheKey  = $asset->getSourceRoot();
         $cacheKey .= $asset->getSourcePath();
         $cacheKey .= $asset->getTargetPath();
-        $cacheKey .= $asset->getLastModified();
+        if($am !== null) {
+            $cacheKey .= $am->getLastModified($asset);
+        } else {
+            $cacheKey .= $asset->getLastModified();
+        }
 
         foreach ($asset->getFilters() as $filter) {
             if ($filter instanceof HashableInterface) {
