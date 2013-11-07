@@ -23,8 +23,9 @@ class AssetCacheTest extends \PHPUnit_Framework_TestCase
     {
         $this->inner = $this->getMock('Assetic\\Asset\\AssetInterface');
         $this->cache = $this->getMock('Assetic\\Cache\\CacheInterface');
+        $this->am = $this->getMock('Assetic\\Factory\\LazyAssetManager', array(), array(), '', false);
 
-        $this->asset = new AssetCache($this->inner, $this->cache);
+        $this->asset = new AssetCache($this->inner, $this->cache, $this->am);
     }
 
     public function testLoadFromCache()
@@ -166,8 +167,9 @@ class AssetCacheTest extends \PHPUnit_Framework_TestCase
 
     public function testGetLastModified()
     {
-        $this->inner->expects($this->once())
+        $this->am->expects($this->once())
             ->method('getLastModified')
+            ->with($this->inner)
             ->will($this->returnValue(123));
 
         $this->assertEquals(123, $this->asset->getLastModified(), '->getLastModified() returns the inner asset last modified');

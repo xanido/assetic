@@ -11,6 +11,7 @@
 
 namespace Assetic\Factory;
 
+use Assetic\Asset\AssetCache;
 use Assetic\Asset\AssetCollection;
 use Assetic\Asset\AssetCollectionInterface;
 use Assetic\Asset\AssetInterface;
@@ -19,6 +20,7 @@ use Assetic\Asset\FileAsset;
 use Assetic\Asset\GlobAsset;
 use Assetic\Asset\HttpAsset;
 use Assetic\AssetManager;
+use Assetic\Cache\CacheInterface;
 use Assetic\Factory\Worker\WorkerInterface;
 use Assetic\FilterManager;
 
@@ -320,6 +322,15 @@ class AssetFactory
     protected function createFileAsset($source, $root = null, $path = null, $vars)
     {
         return new FileAsset($source, array(), $root, $path, $vars);
+    }
+
+    public function createAssetCache(AssetInterface $asset, CacheInterface $cache, LazyAssetManager $am = null)
+    {
+        if($am === null) {
+            $am = $this->am instanceof LazyAssetManager ? $this->am : null;
+        }
+
+        return new AssetCache($asset, $cache, $am);
     }
 
     protected function getFilter($name)
